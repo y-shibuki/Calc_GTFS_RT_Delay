@@ -1,0 +1,18 @@
+version: '3.9'
+
+services:
+  mysql:
+    image: mysql:8.1.0
+    container_name: gtfs_mysql_container
+    env_file:
+      - ../.env.local
+    ports:
+      - "3306:3306"
+    environment:
+      MYSQL_DATABASE: gtfs_db
+      MYSQL_USER: user
+      MYSQL_PASSWORD: password
+      TZ: "Asia/Tokyo"
+    volumes:
+      - /Volumes/SSD/GTFS_DATA/mysql:/var/lib/mysql
+      - ./my.cnf:/etc/mysql/conf.d/my.cnf

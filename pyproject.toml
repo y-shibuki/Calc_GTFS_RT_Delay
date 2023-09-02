@@ -1,0 +1,12 @@
+[tool.poetry]
+name = "gtfs-delay"
+version = "0.1.0"
+description = ""
+authors = ["Hinata Yoshida <h-yoshida@toki.waseda.jp>"]
+
+[tool.poetry.dependencies]
+python = "3.11.3"
+python-dotenv = "^1.0.0"
+pandas = "^2.1.0"
+sqlalchemy = "^2.0.20"
+mysqlclient = "^2.2.0"

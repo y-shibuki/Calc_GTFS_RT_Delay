@@ -1,0 +1,6 @@
+data/
+actual_stop_times/
+delay/
+.venv
+__pycache__/
+.env.local

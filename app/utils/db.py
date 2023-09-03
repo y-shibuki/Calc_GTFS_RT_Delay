@@ -17,7 +17,7 @@ class DBAdapter:
     def __init__(self, url: str) -> None:
         self.__engine = create_engine(url)
         self.__session = scoped_session(
-            sessionmaker(autocommit=True, autoflush=False, bind=self.__engine)
+            sessionmaker(autocommit=False, autoflush=False, bind=self.__engine)
         )
 
     def close(self) -> None:
@@ -40,6 +40,7 @@ class DBAdapter:
     def exec_query(self, query: str) -> None:
         with self.engine.connect() as con:
             con.execute(text(query))
+            con.commit()
 
 
 def get_db_adapter() -> DBAdapter:

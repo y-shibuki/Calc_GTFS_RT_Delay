@@ -23,7 +23,7 @@ visited_tripid = dict()
 n = 0
 
 
-def load_gtfs_data(file_path: str) -> list:
+def load_gtfs_data(file_path: str) -> Dict[str, str]:
     """GTFS-RTデータの読み込み
 
     Args:
@@ -35,14 +35,13 @@ def load_gtfs_data(file_path: str) -> list:
     with open(file_path, "r") as f:
         d = json.load(f)
         if "entity" in d:
-            print(type(d))
             return d["entity"]
         else:
             return []
 
 
 # JSON形式から表形式への変換
-def convert_to_table(trip: Dict[str]) -> List[Any]:
+def convert_to_table(trip: Any) -> List[Any]:
     global visited_tripid, n
     # 臨時便などは除き、時刻表に記載されているもののみを採用
     if trip["tripUpdate"]["trip"]["scheduleRelationship"] != "SCHEDULED":
@@ -152,6 +151,6 @@ for date in get_date("append"):
 
     # 解凍したデータを一括削除
     # 解凍したままだと容量を圧迫するため
-    shutil.rmtree(f"{folder_path}/date")
+    shutil.rmtree(f"{folder_path}/data", ignore_errors=True)
 
 db_adapter.close()

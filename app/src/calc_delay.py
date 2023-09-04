@@ -65,7 +65,18 @@ with db_adapter.engine.connect() as con:
     # 遅延時間を算出
     merged_stop_times["delay"] = merged_stop_times.apply(calc_delay, axis=1)
 
-    merged_stop_times[
+    # * 外れ値の除外 *
+    # 最後の停留所を除外
+    delay_df: pd.DataFrame = merged_stop_times.groupby("trip_id").apply(
+        lambda x: x[x["stop_sequence"] < x["stop_sequence"].max()]
+    )
+    # 最初の停留所を除外
+    # delay_df.query("stop_sequence != 0", inplace=True)
+
+    # 極端な値（1時間以上の遅延、早着）を除外
+    # delay.query("delay >= -3600 & delay <= 3600", inplace=True)
+
+    delay_df[
         [
             "date",
             "trip_id",

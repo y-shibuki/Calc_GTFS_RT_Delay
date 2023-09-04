@@ -1,3 +1,4 @@
+import glob
 from datetime import datetime
 
 import pandas as pd
@@ -6,10 +7,19 @@ from app.utils.db import get_db_adapter
 
 db_adapter = get_db_adapter()
 
+folder_path = "/Volumes/SSD/GTFS_DATA/gtfs_auto_downloader"
+
+# テーブルのデータを全て消去
+db_adapter.exec_query(
+    """
+        truncate delay
+    """
+)
 
 for agency in ["関東自動車", "富山地鉄バス", "富山地鉄市内電車"]:
-    print(agency)
-
+    for path in glob.glob(f"{folder_path}/gtfs/{agency}/*"):
+        print(path)
+    break
     stop_times_df = pd.read_csv(f"./data/GTFS/{agency}/stop_times.txt")[
         [
             "trip_id",

@@ -10,7 +10,7 @@ db_adapter = get_db_adapter()
 folder_path = "/Volumes/SSD/GTFS_DATA/"
 
 # テーブルのデータを全て消去
-db_adapter.exec_query("truncate delay")
+db_adapter.exec_query("truncate gtfs_stop_times")
 
 for agency in ["関東自動車", "富山地鉄バス", "富山地鉄市内電車"]:
     for path in glob.glob(f"{folder_path}/gtfs/{agency}/*"):

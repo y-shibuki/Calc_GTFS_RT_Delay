@@ -1,13 +1,20 @@
 import glob
+import gzip
 import itertools
 import json
+import os
+import shutil
+import tarfile
 from datetime import datetime
+from typing import Set
 
 import pandas as pd
 
 from app.utils.db import get_db_adapter
 
 db_adapter = get_db_adapter()
+
+folder_path = "/Volumes/SSD/GTFS_DATA/gtfs_auto_downloader"
 
 # IDが一意かどうか。
 # visited_tripidには、TripIDがいつ読み込まれたかが格納されていく。
@@ -57,11 +64,33 @@ def convert_to_table(trip) -> list:
     return res
 
 
-for agency in ["関東自動車", "富山地鉄バス", "富山地鉄市内電車"]:
-    for date in [
-        folder.split("/")[-2]
-        for folder in glob.glob(f"./data/GTFS-RT/{agency}/TripUpdate/*/")
-    ]:
+def get_date(crawl_type: str = "append") -> Set[str]:
+    # サーバーで収集された日付
+    crawled_date_set = {
+        os.path.basename(x).split(".")[0] for x in glob.glob(f"{folder_path}/zip/*")
+    }
+
+    if crawl_type == "all":
+        return crawled_date_set
+    elif crawl_type == "append":
+        # データベースに登録済の日付
+        appended_date_set = {
+            x[0].strftime("%Y年%m月%d日")
+            for x in db_adapter.query_data("select distinct date from gtfs_rt")
+        }
+        return crawled_date_set - appended_date_set
+
+    raise Exception
+
+
+for date in get_date("append"):
+    try:
+        with tarfile.open(f"{folder_path}/zip/{date}.tar.gz", "r:gz") as tar:
+            tar.extractall(path=folder_path)
+    except gzip.BadGzipFile as e:
+        print(e, "gzファイルが破損しています。")
+
+    for agency in ["関東自動車", "富山地鉄バス", "富山地鉄市内電車"]:
         print(agency, date)
 
         temp_stop_times_list = []
@@ -69,7 +98,7 @@ for agency in ["関東自動車", "富山地鉄バス", "富山地鉄市内電�
         n = 0
         # GTFSデータを時刻順に読み込み、整形する
         for path in sorted(
-            glob.glob(f"./data/GTFS-RT/{agency}/TripUpdate/{date}/*.json")
+            glob.glob(f"{folder_path}/data/{agency}/TripUpdate/{date}/*.json")
         ):
             # GTFSデータの読み込み
             d = load_gtfs_data(path)
@@ -82,24 +111,26 @@ for agency in ["関東自動車", "富山地鉄バス", "富山地鉄市内電�
 
         # DataFrame型への変換
         # 最後に記録された、「停留所への到着時刻」を実際の到着時刻とみなす
-        stop_times_df = pd.DataFrame(
-            temp_stop_times_list,
-            columns=["trip_id", "actual_arrival_time", "stop_sequence"],
-        ).groupby(
-            by=["trip_id", "stop_sequence"], as_index=False
-        ).last()
+        stop_times_df = (
+            pd.DataFrame(
+                temp_stop_times_list,
+                columns=["trip_id", "actual_arrival_time", "stop_sequence"],
+            )
+            .groupby(by=["trip_id", "stop_sequence"], as_index=False)
+            .last()
+        )
 
         stop_times_df["date"] = datetime.strptime(date, "%Y年%m月%d日")
         stop_times_df["agency"] = agency
 
         with db_adapter.engine.connect() as con:
             stop_times_df.to_sql(
-                name="gtfs_rt",
-                con=con,
-                if_exists="append",
-                index=False,
-                method="multi"
+                name="gtfs_rt", con=con, if_exists="append", index=False, method="multi"
             )
             con.commit()
+
+    # 解凍したデータを一括削除
+    # 解凍したままだと容量を圧迫するため
+    shutil.rmtree(f"{folder_path}/date")
 
 db_adapter.close()

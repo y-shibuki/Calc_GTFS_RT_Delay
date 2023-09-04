@@ -15,4 +15,5 @@ services:
       TZ: "Asia/Tokyo"
     volumes:
       - /Volumes/SSD/GTFS_DATA/mysql:/var/lib/mysql:rw
+      - ./conf.d:/etc/mysql/conf.d
     user: mysql

@@ -6,7 +6,7 @@ import os
 import shutil
 import tarfile
 from datetime import datetime
-from typing import Set
+from typing import Any, Dict, List, Set
 
 import pandas as pd
 
@@ -23,18 +23,26 @@ visited_tripid = dict()
 n = 0
 
 
-# GTFS-RTデータの読み込み
-def load_gtfs_data(file_path) -> list:
+def load_gtfs_data(file_path: str) -> list:
+    """GTFS-RTデータの読み込み
+
+    Args:
+        file_path (str): GTFS-RTのファイルパス
+
+    Returns:
+        list: GTFS-RTデータ
+    """
     with open(file_path, "r") as f:
         d = json.load(f)
         if "entity" in d:
+            print(type(d))
             return d["entity"]
         else:
             return []
 
 
 # JSON形式から表形式への変換
-def convert_to_table(trip) -> list:
+def convert_to_table(trip: Dict[str]) -> List[Any]:
     global visited_tripid, n
     # 臨時便などは除き、時刻表に記載されているもののみを採用
     if trip["tripUpdate"]["trip"]["scheduleRelationship"] != "SCHEDULED":
@@ -52,19 +60,32 @@ def convert_to_table(trip) -> list:
 
     visited_tripid[tripId] = n
 
-    res = []
-
     # 今後、停車予定の停留所が無い場合は採用しない
     if "stopTimeUpdate" not in trip["tripUpdate"]:
         return []
 
-    for stop in trip["tripUpdate"]["stopTimeUpdate"]:
-        date = datetime.fromtimestamp(int(stop["arrival"]["time"]))
-        res.append([tripId, date, stop["stopSequence"]])
-    return res
+    return [
+        [
+            tripId,
+            datetime.fromtimestamp(int(stop["arrival"]["time"])),
+            stop["stopSequence"],
+        ]
+        for stop in trip["tripUpdate"]["stopTimeUpdate"]
+    ]
 
 
 def get_date(crawl_type: str = "append") -> Set[str]:
+    """収集する日付を返す
+
+    Args:
+        crawl_type (str, optional): "all"なら全ての圧縮ファイルを収集する。"append"ならSQLデータベースに登録されていない日付のみを収集する。デフォルトは"append"。
+
+    Raises:
+        Exception: crawl_typeに不正値が代入された場合。
+
+    Returns:
+        Set[str]: 収集する日付
+    """
     # サーバーで収集された日付
     crawled_date_set = {
         os.path.basename(x).split(".")[0] for x in glob.glob(f"{folder_path}/zip/*")

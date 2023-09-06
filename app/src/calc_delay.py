@@ -124,9 +124,11 @@ for agency in ["関東自動車", "富山地鉄バス", "富山地鉄市内電�
                 if_exists="append",
                 index=False,
                 method="multi",
-                chunksize=5000,
+                chunksize=10000,
             )
 
             con.commit()
+
+logger.info(db_adapter.query_data("select count(*) from delay where delay is NULL")[0])
 
 db_adapter.close()

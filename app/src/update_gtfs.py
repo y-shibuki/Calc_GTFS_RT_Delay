@@ -65,6 +65,7 @@ for agency in ["関東自動車", "富山地鉄バス", "富山地鉄市内電�
             ]
         ]
 
+        stops_df["start_date"] = datetime.strptime(start_date, "%Y-%m-%d").date()
         stops_df["agency"] = agency
 
         with db_adapter.engine.connect() as con:

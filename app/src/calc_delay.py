@@ -39,7 +39,7 @@ for agency in ["関東自動車", "富山地鉄バス", "富山地鉄市内電�
     )
 
     for i in range(len(start_date) - 1):
-        logger.info(agency, start_date[i], start_date[i + 1])
+        logger.info(f"{agency}: {start_date[i]} <= date < {start_date[i + 1]}")
         with db_adapter.engine.connect() as con:
             stop_times_df = pd.read_sql(
                 """
@@ -66,10 +66,11 @@ for agency in ["関東自動車", "富山地鉄バス", "富山地鉄市内電�
                         actual_arrival_time
                     from gtfs_rt
                     where
+                        agency = '{agency}' and
                         date >= '{start_date}' and
                         date < '{end_date}'
                 """.format(
-                    start_date=start_date[i], end_date=start_date[i + 1]
+                    agency=agency, start_date=start_date[i], end_date=start_date[i + 1]
                 ),
                 con=con,
             )
@@ -95,9 +96,9 @@ for agency in ["関東自動車", "富山地鉄バス", "富山地鉄市内電�
 
             # * 外れ値の除外 *
             # 最後の停留所を除外
-            delay_df: pd.DataFrame = merged_stop_times.groupby("trip_id").apply(
-                lambda x: x[x["stop_sequence"] < x["stop_sequence"].max()]
-            )
+            delay_df: pd.DataFrame = merged_stop_times.groupby(
+                "trip_id", as_index=False
+            ).apply(lambda x: x[x["stop_sequence"] < x["stop_sequence"].max()])
             # 最初の停留所を除外
             # delay_df.query("stop_sequence != 0", inplace=True)
 
@@ -105,7 +106,7 @@ for agency in ["関東自動車", "富山地鉄バス", "富山地鉄市内電�
             # delay.query("delay >= -3600 & delay <= 3600", inplace=True)
 
             delay_df["agency"] = agency
-            logger.info("書き込み開始")
+
             delay_df[
                 [
                     "date",
@@ -118,10 +119,14 @@ for agency in ["関東自動車", "富山地鉄バス", "富山地鉄市内電�
                     "agency",
                 ]
             ].to_sql(
-                name="delay", con=con, if_exists="append", index=False, method="multi"
+                name="delay",
+                con=con,
+                if_exists="append",
+                index=False,
+                method="multi",
+                chunksize=5000,
             )
-            logger.info("書き込み終了")
 
-        con.commit()
+            con.commit()
 
 db_adapter.close()

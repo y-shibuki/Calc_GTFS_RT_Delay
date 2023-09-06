@@ -12,6 +12,8 @@ elif [ "$1" = "update_gtfs" ]; then
     python3 ./app/src/update_gtfs.py
 elif [ "$1" = "calc_delay" ]; then
     python3 ./app/src/calc_delay.py
+elif [ "$1" = "remove_outlier" ]; then
+    python3 ./app/src/remove_outlier.py
 else
     echo "コマンドが不明です"
 fi

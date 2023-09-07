@@ -6,7 +6,9 @@ source ./.env.local
 
 export PYTHONPATH=/Users/shibuki/Documents/GTFS_delay/app:$PYTHONPATH
 
-if [ "$1" = "update_gtfs_rt" ]; then
+if [ "$1" = "load_env" ]; then
+    echo "環境変数を読み込みました。"
+elif [ "$1" = "update_gtfs_rt" ]; then
     python3 ./app/src/update_gtfs_rt.py $2
 elif [ "$1" = "update_gtfs" ]; then
     python3 ./app/src/update_gtfs.py

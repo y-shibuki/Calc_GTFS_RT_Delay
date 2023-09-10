@@ -14,6 +14,7 @@ folder_path = "/Volumes/SSD/GTFS_DATA/"
 # テーブルのデータを全て消去
 db_adapter.exec_query("truncate gtfs_stop_times")
 db_adapter.exec_query("truncate gtfs_stops")
+db_adapter.exec_query("truncate gtfs_section_time")
 
 for agency in ["関東自動車", "富山地鉄バス", "富山地鉄市内電車"]:
     for path in glob.glob(f"{folder_path}/gtfs/{agency}/*"):
@@ -49,7 +50,7 @@ for agency in ["関東自動車", "富山地鉄バス", "富山地鉄市内電�
                 if_exists="append",
                 index=False,
                 method="multi",
-                chunksize=100000
+                chunksize=100000,
             )
             con.commit()
 
@@ -61,7 +62,7 @@ for agency in ["関東自動車", "富山地鉄バス", "富山地鉄市内電�
                 "stop_lat",
                 "stop_lon",
                 "location_type",
-                "parent_station"
+                "parent_station",
             ]
         ]
 
@@ -75,7 +76,41 @@ for agency in ["関東自動車", "富山地鉄バス", "富山地鉄市内電�
                 if_exists="append",
                 index=False,
                 method="multi",
-                chunksize=100000
+                chunksize=100000,
+            )
+            con.commit()
+
+        # 区間所要時間を計算
+        res = []
+        for trip_id, g in stop_times_df.groupby("trip_id"):
+            O_id = None
+            departure_time = None
+            for _, x in g.iterrows():
+                if O_id is not None:
+                    arrival_time = x["arrival_time"]
+                    res.append(
+                        [
+                            trip_id,
+                            O_id,
+                            x["stop_id"],
+                            (arrival_time - departure_time).total_seconds(),
+                            agency,
+                            start_date,
+                        ]
+                    )
+                O_id = x["stop_id"]
+                departure_time = x["departure_time"]
+
+        with db_adapter.engine.connect() as con:
+            pd.DataFrame(
+                res, columns=["trip_id", "O_Id", "D_Id", "section_time", "agency", "start_date"]
+            ).to_sql(
+                name="gtfs_section_time",
+                con=con,
+                if_exists="append",
+                index=False,
+                method="multi",
+                chunksize=100000,
             )
             con.commit()
 

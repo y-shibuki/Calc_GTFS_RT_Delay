@@ -12,6 +12,8 @@ db_adapter = get_db_adapter()
 warnings.simplefilter("ignore")
 
 agencies = ["関東自動車", "富山地鉄バス", "富山地鉄市内電車"]
+# agencies = ["関東自動車"]
+# delay_utsunomiya_east _宇都宮駅東口を含むルート
 delay_df = defaultdict(pd.DataFrame)
 
 for agency in agencies:
@@ -19,14 +21,16 @@ for agency in agencies:
         delay_df[agency] = pd.read_sql(
             """
             select *
-            from delay
+            from delay_utsunomiya_east
             where
                 agency = '{agency}'
-            """.format(agency=agency),
+                and
+                date < '2023-08-26'
+            """.format(
+                agency=agency
+            ),
             con=con,
-            chunksize=100000,
         )
-
 
 res = []
 for i in range(0, 2000, 100):
@@ -35,8 +39,13 @@ for i in range(0, 2000, 100):
         temp.append(len(delay_df[agency].query(f"{i} <= delay < {i + 100}")))
     res.append(temp)
 
-pd.DataFrame(res, columns=["階級", "下限"] + agencies).to_csv(
-    "./data/LRT導入後の遅延時間.csv", index=False, encoding="utf-8-sig"
+df = pd.DataFrame(res, columns=["階級", "下限"] + agencies)
+
+for agency in agencies:
+    df[f"{agency}_標準化"] = df[agency] / df[agency].sum()
+
+df.to_csv(
+    "./data/度数分布表/LRT導入前の遅延時間_宇都宮駅東口を含むルート.csv", index=False, encoding="utf-8-sig"
 )
 
 db_adapter.close()

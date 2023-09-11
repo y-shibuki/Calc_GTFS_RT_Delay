@@ -10,12 +10,8 @@ if [ "$1" = "load_env" ]; then
     echo "環境変数を読み込みました。"
 elif [ "$1" = "update_gtfs_rt" ]; then
     python3 ./app/src/update_gtfs_rt.py $2
-elif [ "$1" = "update_gtfs" ]; then
-    python3 ./app/src/update_gtfs.py
-elif [ "$1" = "calc_delay" ]; then
-    python3 ./app/src/calc_delay.py
-elif [ "$1" = "remove_outlier" ]; then
-    python3 ./app/src/remove_outlier.py
+elif [ -e "./app/src/$1.py" ]; then
+    python3 "./app/src/$1.py"
 else
     echo "コマンドが不明です"
 fi

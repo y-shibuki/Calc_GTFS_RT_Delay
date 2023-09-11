@@ -103,7 +103,7 @@ for agency in ["関東自動車", "富山地鉄バス", "富山地鉄市内電�
 
         with db_adapter.engine.connect() as con:
             pd.DataFrame(
-                res, columns=["trip_id", "O_Id", "D_Id", "section_time", "agency", "start_date"]
+                res, columns=["trip_id", "O_id", "D_id", "section_time", "agency", "start_date"]
             ).to_sql(
                 name="gtfs_section_time",
                 con=con,

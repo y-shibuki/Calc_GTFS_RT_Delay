@@ -1,7 +1,9 @@
 import glob
+import os
 from datetime import datetime
 
 import pandas as pd
+from dotenv import load_dotenv
 
 from app.utils.db import get_db_adapter
 from app.utils.logger import getLogger
@@ -9,12 +11,17 @@ from app.utils.logger import getLogger
 logger = getLogger(__name__)
 db_adapter = get_db_adapter()
 
-folder_path = "/Volumes/SSD/GTFS_DATA/"
+# 環境変数の読み込み
+load_dotenv("./.env.local")
+
+folder_path = os.getenv("FOLDER_PATH")
 
 # テーブルのデータを全て消去
-db_adapter.exec_query("truncate gtfs_stop_times")
-db_adapter.exec_query("truncate gtfs_stops")
-db_adapter.exec_query("truncate gtfs_section_time")
+db_adapter.exec_query(
+    """
+    DROP TABLE IF EXISTS gtfs_stop_times, gtfs_stops, gtfs_section_time;
+    """
+)
 
 for agency in ["関東自動車", "富山地鉄バス", "富山地鉄市内電車"]:
     for path in glob.glob(f"{folder_path}/gtfs/{agency}/*"):

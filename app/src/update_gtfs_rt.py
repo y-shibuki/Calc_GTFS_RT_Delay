@@ -9,12 +9,18 @@ from datetime import datetime
 from typing import Any, Dict, List, Set
 
 import pandas as pd
+from dotenv import load_dotenv
 
 from app.utils.db import get_db_adapter
+from app.utils.logger import getLogger
 
+logger = getLogger(__name__)
 db_adapter = get_db_adapter()
 
-folder_path = "/Volumes/SSD/GTFS_DATA/gtfs_auto_downloader"
+# 環境変数の読み込み
+load_dotenv("./.env.local")
+
+folder_path = os.getenv("FOLDER_PATH")
 
 # IDが一意かどうか。
 # visited_tripidには、TripIDがいつ読み込まれたかが格納されていく。

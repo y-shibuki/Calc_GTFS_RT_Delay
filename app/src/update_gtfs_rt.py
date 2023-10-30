@@ -57,7 +57,7 @@ def convert_to_table(trip: Any) -> List[Any]:
     try:
         tripId = trip["tripUpdate"]["trip"]["tripId"]
     except KeyError:
-        print("tripIdが存在しません。")
+        logger.warning("tripIdが存在しません。")
         return []
 
     # 前回tripIDが記録されたのが、直近(n-1）ではない→例外判定
@@ -121,10 +121,10 @@ for date in get_date(crawl_type):
         with tarfile.open(f"{folder_path}/zip/{date}.tar.gz", "r:gz") as tar:
             tar.extractall(path=folder_path)
     except gzip.BadGzipFile as e:
-        print(e, date, "gzファイルが破損しています。")
+        logger.error(f"{e}, {date}, gzファイルが破損しています。")
 
     for agency in ["関東自動車", "富山地鉄バス", "富山地鉄市内電車"]:
-        print(agency, date)
+        logger.info(f"{agency}, {date}")
 
         temp_stop_times_list = []
         visited_tripid = dict()
@@ -158,7 +158,12 @@ for date in get_date(crawl_type):
 
         with db_adapter.engine.connect() as con:
             stop_times_df.to_sql(
-                name="gtfs_rt", con=con, if_exists="append", index=False, method="multi"
+                name="gtfs_rt",
+                con=con,
+                if_exists="append",
+                index=False,
+                method="multi",
+                chunksize=10000,
             )
             con.commit()
 

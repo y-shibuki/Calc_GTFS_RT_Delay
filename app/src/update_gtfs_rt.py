@@ -112,6 +112,10 @@ def get_date(crawl_type: str = "append") -> Set[str]:
 
 crawl_type = sys.argv[1]
 
+if crawl_type == "all":
+    # テーブルのデータを全て消去
+    db_adapter.exec_query("drop table if exists gtfs_rt;")
+
 for date in get_date(crawl_type):
     try:
         with tarfile.open(f"{folder_path}/zip/{date}.tar.gz", "r:gz") as tar:
@@ -127,7 +131,7 @@ for date in get_date(crawl_type):
         n = 0
         # GTFSデータを時刻順に読み込み、整形する
         for path in sorted(
-            glob.glob(f"{folder_path}/data/{agency}/TripUpdate/{date}/*.json")
+            glob.glob(f"{folder_path}/data/{agency}/TripUpdate*/{date}/*.json")
         ):
             # GTFSデータの読み込み
             d = load_gtfs_data(path)

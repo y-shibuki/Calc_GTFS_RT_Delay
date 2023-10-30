@@ -8,6 +8,8 @@ from app.utils.logger import getLogger
 logger = getLogger(__name__)
 db_adapter = get_db_adapter()
 
+#TODO
+# cuDFを使用する
 
 # 時刻表が更新される際に、StopSequenceがズレることがあるので、その一時的対応
 def calc_delay(k):
@@ -19,7 +21,7 @@ def calc_delay(k):
 
 
 # テーブルのデータを全て消去
-db_adapter.exec_query("truncate delay")
+db_adapter.exec_query("drop table if exists delay;")
 
 for agency in ["関東自動車", "富山地鉄バス", "富山地鉄市内電車"]:
     start_date = sorted(
@@ -94,6 +96,7 @@ for agency in ["関東自動車", "富山地鉄バス", "富山地鉄市内電�
 
             delay_df["agency"] = agency
 
+            logger.info("書き込み開始")
             delay_df[
                 [
                     "date",
@@ -111,10 +114,11 @@ for agency in ["関東自動車", "富山地鉄バス", "富山地鉄市内電�
                 if_exists="append",
                 index=False,
                 method="multi",
-                chunksize=10000,
+                chunksize=100000,
             )
 
             con.commit()
+            logger.info("書き込み終了")
 
 logger.info(db_adapter.query_data("select count(*) from delay where delay is NULL")[0])
 

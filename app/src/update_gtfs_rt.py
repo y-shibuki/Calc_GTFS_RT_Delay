@@ -4,6 +4,7 @@ import itertools
 import json
 import os
 import shutil
+import sys
 import tarfile
 from datetime import datetime
 from typing import Any, Dict, List, Set
@@ -109,12 +110,14 @@ def get_date(crawl_type: str = "append") -> Set[str]:
     raise Exception
 
 
-for date in get_date("append"):
+crawl_type = sys.argv[1]
+
+for date in get_date(crawl_type):
     try:
         with tarfile.open(f"{folder_path}/zip/{date}.tar.gz", "r:gz") as tar:
             tar.extractall(path=folder_path)
     except gzip.BadGzipFile as e:
-        print(e, "gzファイルが破損しています。")
+        print(e, date, "gzファイルが破損しています。")
 
     for agency in ["関東自動車", "富山地鉄バス", "富山地鉄市内電車"]:
         print(agency, date)
